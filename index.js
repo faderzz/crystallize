@@ -13,7 +13,7 @@ let chatCollection;
 
 const client = new MongoClient(mongo_url);
 
-filtered_words = ['https://discord.gg/', 'shop', 'store', 'buy', 'sell', 'trade', 'giveaway', 'give away']
+filtered_words = ['join', 'shop', 'store', 'buy', 'sell', 'kit', 'giveaway', 'kits', '_kill', '_ignore', 'discord', 'website', 'vote']
 
 async function run() {
   try {
@@ -87,6 +87,12 @@ bot.on('respawn', () => {
 // Bot Chat
 bot.on('chat', async (username, message) => {
   if (username !== bot.username) {
+    const containsBannedWord = filtered_words.some(word => message.toLowerCase().includes(word.toLowerCase()));
+    if (containsBannedWord) {
+      console.log(`Message from ${username} was not added to the database: it contained a banned word.`);
+      return;
+    }
+    
     chatCollection.insertOne({ username, message }, (err) => {
       if (err) throw err;
     });
@@ -100,7 +106,7 @@ bot.on('chat', async (username, message) => {
       console.log('Killed bot');
     } else if (message === '_generate') {
       const sentence = await generate();
-      bot.chat(sentence);
+      bot.chat(": " + sentence);
       console.log(sentence);
     } else if (message.startsWith('_ignore ')) {
       const targetUsername = message.split(' ')[1];
@@ -109,6 +115,7 @@ bot.on('chat', async (username, message) => {
     }
   }
 });
+
 
 // Console chat input
 function handleConsoleInput(bot) {
