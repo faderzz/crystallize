@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const readline = require('readline');
 const MongoClient = require('mongodb').MongoClient;
-const markov = require('markov-generator');
+const Markov = require('markov-generator');
 require('dotenv').config();
 
 const username = process.env.email;
@@ -12,6 +12,8 @@ const mongo_url = process.env.mongo_url;
 let chatCollection;
 
 const client = new MongoClient(mongo_url);
+
+filtered_words = ['https://discord.gg/', 'shop', 'store', 'buy', 'sell', 'trade', 'giveaway', 'give away']
 
 async function run() {
   try {
@@ -37,20 +39,29 @@ const bot = mineflayer.createBot({
   auth: 'microsoft'
 });
 
+// Store all chat messages from collection as an array
+async function getChat() {
+  const cursor = chatCollection.find({}).project({message: 1, _id: 0});
+  const docs = await cursor.toArray();
+  // Remove {message: } from each object
+  for (i = 0; i < docs.length; i++) {
+    docs[i] = docs[i].message;
+  }
+  return docs;
+}
+
 // Function to generate message using markov chains
 async function generate() {
+
+  const options = { stateSize: 2, maxTries: 100, input: await getChat() };
+  const markov = new Markov(options);
+  
   // Retrieve all chat messages from MongoDB
   const cursor = chatCollection.find({});
   const docs = await cursor.toArray();
 
-  // Create a markov chain with a state size of 2
-  const chain = markov(2);
-
-  // Add all chat messages to the markov chain
-  chain.addData(docs.map(doc => doc.message));
-
   // Generate a new message
-  const sentence = chain.generate();
+  const sentence = markov.makeChain();
 
   return sentence;
 }
@@ -91,6 +102,10 @@ bot.on('chat', async (username, message) => {
       const sentence = await generate();
       bot.chat(sentence);
       console.log(sentence);
+    } else if (message.startsWith('_ignore ')) {
+      const targetUsername = message.split(' ')[1];
+      bot.chat(`/ignore ${targetUsername}`);
+      console.log(`Ignoring ${targetUsername}`);
     }
   }
 });
@@ -106,3 +121,4 @@ function handleConsoleInput(bot) {
     bot.chat(input);
   });
 }
+
