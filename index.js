@@ -1,6 +1,7 @@
 const mineflayer = require('mineflayer');
 const readline = require('readline');
 const Vec3 = require('vec3');
+const sqlite3 = require('sqlite3').verbose();
 require('dotenv').config();
 
 const username = process.env.email;
@@ -15,29 +16,39 @@ const bot = mineflayer.createBot({
   auth: 'microsoft'
 });
 
-function walkForward(bot, distance) {
-    const mcData = require('minecraft-data')(bot.version);
-    const movements = new Movements(bot, mcData);
-    
-    const dest = bot.entity.position.offset(0, 0, distance);
-    bot.pathfinder.setMovements(movements);
-    bot.pathfinder.setGoal(new GoalBlock(dest.x, dest.y, dest.z));
+const db = new sqlite3.Database('chatlog.db', (err) => {
+  if (err) {
+    console.error(err.message);
+  } else {
+    console.log('Connected to the chatlog database.');
+    db.run('CREATE TABLE IF NOT EXISTS chatlog (timestamp INTEGER, username TEXT, message TEXT)');
   }
+});
 
 bot.once('spawn', () => {
   console.log(`Logged in as ${bot.username} on ${server_address}`);
-  walkForward(bot, 5);
   handleConsoleInput(bot);
+  bot.setControlState('forward', true)
   bot.setControlState('jump', true)
   bot.setControlState('sneak', true)
 });
 
 bot.on('respawn', () => {
-    // Walk 5 blocks forward on respawn
-    walkForward(bot, 5);
-    bot.setControlState('jump', true)
-    bot.setControlState('sneak', true)
+  bot.setControlState('forward', true)
+  bot.setControlState('jump', true)
+  bot.setControlState('sneak', true)
+});
+
+bot.on('chat', (username, message) => {
+  if (username === bot.username) return;
+  db.run('INSERT INTO chatlog (timestamp, username, message) VALUES (?, ?, ?)', [Date.now(), username, message], (err) => {
+    if (err) {
+      console.error(err.message);
+    } else {
+      console.log(`Saved chat message from ${username}: ${message}`);
+    }
   });
+});
 
 function handleConsoleInput(bot) {
   const rl = readline.createInterface({
