@@ -1,30 +1,19 @@
 const mineflayer = require('mineflayer');
-const sqlite3 = require('sqlite3').verbose();
 const readline = require('readline');
-const Vec3 = require('vec3');
+const MongoClient = require('mongodb').MongoClient;
 require('dotenv').config();
 
 const username = process.env.email;
 const password = process.env.password;
 const server_address = process.env.server_address;
+const mongo_url = process.env.mongo_url;
 
-const db = new sqlite3.Database('chat_messages.db', (err) => {
-  if (err) {
-    console.error(err.message);
-  }
-  console.log('Connected to the chat_messages database.');
-  db.run(`CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            message TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-          )`,
-    (err) => {
-      if (err) {
-        console.error(err.message);
-      }
-      console.log('Created messages table if it did not exist.');
-    });
+let chatCollection;
+
+MongoClient.connect(mongo_url, { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
+  if (err) throw err;
+  const db = client.db('minecraft');
+  chatCollection = db.collection('chat');
 });
 
 const bot = mineflayer.createBot({
@@ -35,31 +24,44 @@ const bot = mineflayer.createBot({
   auth: 'microsoft'
 });
 
+// Bot Login
+
 bot.once('spawn', () => {
   console.log(`Logged in as ${bot.username} on ${server_address}`);
   handleConsoleInput(bot);
+  bot.setControlState('forward', true)
+  bot.setControlState('jump', true)
+  bot.setControlState('sneak', true)
 });
 
-bot.on('chat', (username, message) => {
-  if (username === bot.username) {
-    // Ignore messages sent by the bot itself
-    return;
-  }
-  console.log(`${username}: ${message}`);
-  saveChatMessageToDatabase(username, message);
-});
-
-bot.on('death', () => {
-  console.log('Bot died.');
-  bot.setControlState('jump', true);
-  bot.respawn();
-});
-
+// Bot Respawn - Anti AFK check
 bot.on('respawn', () => {
-  console.log('Bot respawned.');
-  bot.setControlState('forward', true);
+  bot.setControlState('forward', true)
+  bot.setControlState('jump', true)
+  bot.setControlState('sneak', true)
 });
 
+// Bot Chat
+bot.on('chat', (username, message) => {
+    if (username !== bot.username) {
+      chatCollection.insertOne({ username, message, timestamp: new Date() }, (err) => {
+        if (err) throw err;
+      });
+      if (username === 'Rgos' && message === '_logout') {
+        console.log('Exiting program and closing database...');
+        chatCollection = null;
+        bot.quit();
+        process.exit(0);
+      } else if (message === '_count' && username === 'Rgos') {
+        chatCollection.countDocuments((err, count) => {
+          if (err) throw err;
+          bot.chat(`There are ${count} chat entries.`);
+        });
+      }
+    }
+  });
+
+// Console chat input
 function handleConsoleInput(bot) {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -67,26 +69,6 @@ function handleConsoleInput(bot) {
   });
 
   rl.on('line', (input) => {
-    if (input === '_logout') {
-      console.log('Logging out...');
-      db.close((err) => {
-        if (err) {
-          console.error(err.message);
-        }
-        console.log('Closed the chat_messages database.');
-        bot.quit();
-      });
-    } else {
-      bot.chat(input);
-    }
-  });
-}
-
-function saveChatMessageToDatabase(username, message) {
-  db.run(`INSERT INTO messages (username, message) VALUES (?, ?)`, [username, message], (err) => {
-    if (err) {
-      console.error(err.message);
-    }
-    console.log(`Saved chat message from ${username} to the database.`);
+    bot.chat(input);
   });
 }
