@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const readline = require('readline');
 const MongoClient = require('mongodb').MongoClient;
-const { Markov } = require('markov-strings-db');
+const markov = require('markov-generator');
 require('dotenv').config();
 
 const username = process.env.email;
@@ -39,20 +39,20 @@ const bot = mineflayer.createBot({
 
 // Function to generate message using markov chains
 async function generate() {
-  const options = { stateSize: 2, order: 'sequence', maxTries: 100, prng: Math.random };
-  const markov = new Markov(options);
-  
   // Retrieve all chat messages from MongoDB
   const cursor = chatCollection.find({});
   const docs = await cursor.toArray();
 
-  // Add all chat messages to the Markov model
-  markov.addData(docs.map(doc => doc.message));
+  // Create a markov chain with a state size of 2
+  const chain = markov(2);
+
+  // Add all chat messages to the markov chain
+  chain.addData(docs.map(doc => doc.message));
 
   // Generate a new message
-  const sentence = await markov.generate();
+  const sentence = chain.generate();
 
-  return sentence.string;
+  return sentence;
 }
 
 // Bot Login
