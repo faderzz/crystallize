@@ -104,7 +104,7 @@ bot.on('chat', async (username, message) => {
     } else if (message === '_kill') {
       bot.chat('/kill');
       console.log('Killed bot');
-    } else if (message === '_generate') {
+    } else if (message === '_generate' || message === '_gen') {
       const sentence = await generate();
       bot.chat(": " + sentence);
       console.log(sentence);
