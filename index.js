@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const readline = require('readline');
 const MongoClient = require('mongodb').MongoClient;
-const MarkovChain = require('markovchain');
+const { Markov } = require('markov-strings-db');
 require('dotenv').config();
 
 const username = process.env.email;
@@ -38,10 +38,21 @@ const bot = mineflayer.createBot({
 });
 
 // Function to generate message using markov chains
-function generate(corpus, callback) {
-  const chain = new MarkovChain(corpus);
-  const sentence = chain.start(Object.keys(chain.startWords)[0]).end().process();
-  callback(sentence);
+async function generate() {
+  const options = { stateSize: 2, order: 'sequence', maxTries: 100, prng: Math.random };
+  const markov = new Markov(options);
+  
+  // Retrieve all chat messages from MongoDB
+  const cursor = chatCollection.find({});
+  const docs = await cursor.toArray();
+
+  // Add all chat messages to the Markov model
+  markov.addData(docs.map(doc => doc.message));
+
+  // Generate a new message
+  const sentence = await markov.generate();
+
+  return sentence.string;
 }
 
 // Bot Login
@@ -63,7 +74,7 @@ bot.on('respawn', () => {
 });
 
 // Bot Chat
-bot.on('chat', (username, message) => {
+bot.on('chat', async (username, message) => {
   if (username !== bot.username) {
     chatCollection.insertOne({ username, message }, (err) => {
       if (err) throw err;
@@ -77,14 +88,9 @@ bot.on('chat', (username, message) => {
       bot.chat('/kill');
       console.log('Killed bot');
     } else if (message === '_generate') {
-      chatCollection.find({}).toArray((err, docs) => {
-        if (err) throw err;
-        const corpus = docs.map(doc => doc.message).join('\n');
-        generate(corpus, (sentence) => {
-          bot.chat(sentence);
-          console.log(sentence);
-        });
-      });
+      const sentence = await generate();
+      bot.chat(sentence);
+      console.log(sentence);
     }
   }
 });

@@ -18,8 +18,7 @@
   "homepage": "https://github.com/faderzz/crystallize#readme",
   "dependencies": {
     "dotenv": "^16.0.3",
-    "markov-strings": "^3.0.1",
-    "markovchain": "^1.0.2",
+    "markov-strings-db": "^4.2.0",
     "mineflayer": "^4.8.1",
     "mineflayer-pathfinder": "^2.4.2",
     "mongodb": "^5.0.1"
