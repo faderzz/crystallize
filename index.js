@@ -108,7 +108,7 @@ bot.on('chat', async (username, message) => {
       const sentence = await generate();
       bot.chat(": " + sentence);
       console.log(sentence);
-    } else if (message.startsWith('_ignore ')) {
+    } else if (message.startsWith('_ignore ') && username === 'Rgos') {
       const targetUsername = message.split(' ')[1];
       bot.chat(`/ignore ${targetUsername}`);
       console.log(`Ignoring ${targetUsername}`);
@@ -129,3 +129,9 @@ function handleConsoleInput(bot) {
   });
 }
 
+// Generate every 20 seconds
+setInterval(async () => {
+  const sentence = await generate();
+  bot.chat("> " + sentence);
+  console.log(sentence);
+}, 20000);
