@@ -1,4 +1,5 @@
 
+
 # Crystallize
 A Minecraft chatbot that can generate messages using Markov chains.
 
@@ -24,6 +25,16 @@ The bot will join the specified Minecraft server and start listening to chat mes
 - `_logout`: Exits the program and closes the database
 
 You can also type messages in the console, and the bot will send them to the server.
+
+## Roadmap
+
+ - [x] ~~Implement commands~~
+ - [x] ~~Implement anti-afk.~~
+ - [x] ~~Implement Microsoft Auth~~
+ - [x] ~~Implement working Markov Chain generation~~
+ - [x] ~~Implement MongoDB support~~
+ - [x] ~~Implement auto-generation~~
+ - [ ] Completely rewrite the bot.
 
 ## License
 
