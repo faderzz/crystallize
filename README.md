@@ -8,10 +8,12 @@ A Minecraft chatbot that can generate messages using Markov chains.
 2. Install dependencies with `npm install`
 3. Rename `.env.example` to `.env` and add your Minecraft's Microsoft account email, password, server address, and MongoDB URL in the following format:
 
-    ```email=YOUR_EMAIL```
-    ```password=YOUR_PASSWORD```
-    ```server_address=YOUR_SERVER_ADDRESS```
-    ```mongo_url=YOUR_MONGO_URL```
+    ```
+    email=YOUR_EMAIL
+    password=YOUR_PASSWORD
+    server_address=YOUR_SERVER_ADDRESS
+    mongo_url=YOUR_MONGO_URL
+    ```
 
 4. Start the program with `node index.js`
 
