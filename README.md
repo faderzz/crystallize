@@ -1,6 +1,7 @@
 
 # Crystallize
 A Minecraft chatbot that can generate messages using Markov chains.
+Made for 0b0t.org
 
 ## Installation
 
