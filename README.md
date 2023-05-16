@@ -3,6 +3,9 @@
 A Minecraft chatbot that can generate messages using Markov chains.
 Made for 0b0t.org
 
+<img width="769" alt="image" src="https://github.com/faderzz/crystallize/assets/58748338/1f90fab0-f29a-4d79-b897-7b1640d40436">
+
+
 ## Installation
 
 1. Clone the repository
